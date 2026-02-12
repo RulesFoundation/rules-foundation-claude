@@ -34,27 +34,33 @@ One subsection per file. Never mix content from adjacent subsections.
 # statute/26/1411/a.rac
 # 26 USC 1411(a) - General Rule
 
-text: """
+"""
 (a) General rule.-- Except as provided in this section...
 """
 
-parameter niit_rate:
-  description: "Tax rate on net investment income"
-  unit: rate
-  values:
-    2013-01-01: 0.038
+niit_rate:
+    description: "Tax rate on net investment income"
+    unit: rate
+    from 2013-01-01: 0.038
 
-variable net_investment_income_tax:
-  imports:
-    - 26/1411/c#net_investment_income
-    - 26/1411/b#threshold_amount
-  entity: TaxUnit
-  period: Year
-  dtype: Money
-  formula: |
-    excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
-    return niit_rate * min(net_investment_income, excess_magi)
-  tests:
+net_investment_income_tax:
+    imports:
+        - 26/1411/c#net_investment_income
+        - 26/1411/b#threshold_amount
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2013-01-01:
+        excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
+        return niit_rate * min(net_investment_income, excess_magi)
+```
+
+Tests go in a separate `.rac.test` file:
+
+```yaml
+# statute/26/1411/a.rac.test
+
+net_investment_income_tax:
     - name: "MAGI below threshold"
       period: 2024-01
       inputs:
@@ -68,9 +74,12 @@ variable net_investment_income_tax:
 
 1. **Never use `syntax: python`** - native DSL only
 2. **Never hardcode brackets** - use `marginal_agg()` for tax brackets
-3. **Never hardcode dollar amounts** - all values go in parameters with effective dates
+3. **Never hardcode dollar amounts** - all values go in parameters with `from` temporal entries
 4. **Always fetch statute text first** - from atlas or Cornell LII
-5. **Every variable needs tests** - basic case, edge cases, zero case
+5. **Every variable needs tests** - in a companion `.rac.test` file (basic case, edge cases, zero case)
+6. **No `parameter`/`variable` keywords** - definitions are bare `name:` blocks, distinguished by attributes
+7. **No `formula:` or `values:` keys** - use `from YYYY-MM-DD:` temporal entries instead
+8. **No `text:` key** - use bare `"""..."""` docstrings for statute text
 
 ## Validation
 
@@ -111,14 +120,13 @@ Amendments stack — later files override earlier ones for overlapping dates. Th
 
 ## Temporal versioning
 
-Parameters naturally support multiple date-dependent values:
+Parameters and formulas support temporal entries with `from YYYY-MM-DD:` syntax:
 
 ```yaml
-parameter standard_deduction_single:
-  values:
-    2023-01-01: 13850
-    2024-01-01: 14600
-    2025-01-01: 15000
+standard_deduction_single:
+    from 2023-01-01: 13850
+    from 2024-01-01: 14600
+    from 2025-01-01: 15000
 ```
 
 The engine resolves the correct value for the target date at compile time. Use `autorac compile --as-of 2024-06-01` to test specific dates.
@@ -146,8 +154,11 @@ Compilation catches type errors, missing dependencies, and circular references t
 ## Completion checklist
 
 - [ ] File path matches statute subsection number
-- [ ] `text:` quotes the EXACT subsection
-- [ ] No hardcoded dollar amounts (use parameters)
+- [ ] `"""..."""` docstring quotes the EXACT subsection
+- [ ] No hardcoded dollar amounts (use parameters with `from` entries)
+- [ ] No `parameter`/`variable` keywords (bare `name:` blocks only)
+- [ ] No `formula:`/`values:` keys (use `from YYYY-MM-DD:` entries)
+- [ ] Tests in companion `.rac.test` file (not inline)
 - [ ] Parent file imports new child variables
 - [ ] Every import resolves to existing definition
 - [ ] No circular references

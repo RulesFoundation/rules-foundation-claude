@@ -82,24 +82,19 @@ def detect_write_event(file_path: str, content: str) -> tuple[str, dict]:
         if stub_for_match:
             metadata["stub_for"] = stub_for_match.group(1).strip()
 
-        # Extract variable names
-        var_matches = re.findall(r'^variable\s+(\w+):', content, re.MULTILINE)
-        if var_matches:
-            metadata["variables"] = var_matches
+        # Extract definition names (bare name: at start of line)
+        def_matches = re.findall(r'^(\w+):\s*$', content, re.MULTILINE)
+        if def_matches:
+            metadata["definitions"] = def_matches
 
         return "stub_created", metadata
 
-    # Check for encoded file
-    if 'formula:' in content or 'status: encoded' in content:
-        # Extract variable names
-        var_matches = re.findall(r'^variable\s+(\w+):', content, re.MULTILINE)
-        if var_matches:
-            metadata["variables"] = var_matches
-
-        # Extract parameter names
-        param_matches = re.findall(r'^parameter\s+(\w+):', content, re.MULTILINE)
-        if param_matches:
-            metadata["parameters"] = param_matches
+    # Check for encoded file (new syntax uses 'from YYYY-MM-DD:' temporal entries)
+    if re.search(r'from \d{4}-\d{2}-\d{2}:', content) or 'status: encoded' in content:
+        # Extract definition names (bare name: at start of line, no keyword prefix)
+        def_matches = re.findall(r'^(\w+):\s*$', content, re.MULTILINE)
+        if def_matches:
+            metadata["definitions"] = def_matches
 
         # Check for test count
         test_matches = re.findall(r'^\s+- name:', content, re.MULTILINE)

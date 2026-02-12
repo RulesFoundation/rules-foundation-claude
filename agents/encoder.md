@@ -16,32 +16,32 @@ You encode tax and benefit law into executable RAC (Rules as Code) format.
 ```yaml
 # WRONG - breaks test runner
 syntax: python
-formula: |
-  ...
 
-# CORRECT - native DSL works fine
-formula: |
-  ...
+# CORRECT - native DSL (no syntax: declaration needed)
 ```
 
 ### 2. NEVER hardcode bracket thresholds - use `marginal_agg()`
 ```yaml
 # WRONG - hardcoded values
-formula: |
+from 2018-01-01:
   if taxable_income <= 19050:
     tax = 0.10 * taxable_income
   elif taxable_income <= 77400:
     ...
 
 # CORRECT - parameterized with built-in function
-parameter brackets:
-  values:
-    2018-01-01:
-      thresholds: [0, 19050, 77400, 165000, 315000, 400000, 600000]
-      rates: [0.10, 0.12, 0.22, 0.24, 0.32, 0.35, 0.37]
+brackets:
+    unit: composite
+    from 2018-01-01:
+        thresholds: [0, 19050, 77400, 165000, 315000, 400000, 600000]
+        rates: [0.10, 0.12, 0.22, 0.24, 0.32, 0.35, 0.37]
 
-formula: |
-  return marginal_agg(taxable_income, brackets)
+income_tax:
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2018-01-01:
+        return marginal_agg(taxable_income, brackets)
 ```
 
 ### 3. ONLY literals allowed: -1, 0, 1, 2, 3
@@ -120,30 +120,36 @@ If statute text says "25 percent", define the parameter in THAT file. Don't impo
 ```yaml
 # 26 USC Section 1411(a) - General Rule
 
-text: """
+"""
 (a) General rule.-- Except as provided in this section...
 """
 
-parameter niit_rate:
-  description: "Tax rate on net investment income"
-  unit: rate
-  values:
-    2013-01-01: 0.038
+niit_rate:
+    description: "Tax rate on net investment income"
+    unit: rate
+    from 2013-01-01: 0.038
 
-variable net_investment_income_tax:
-  imports:
-    - 26/1411/c#net_investment_income
-    - 26/1411/b#threshold_amount
-  entity: TaxUnit
-  period: Year
-  dtype: Money
-  unit: "USD"
-  label: "Net Investment Income Tax"
-  description: "3.8% tax on lesser of NII or excess MAGI per 26 USC 1411(a)"
-  formula: |
-    excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
-    return niit_rate * min(net_investment_income, excess_magi)
-  tests:
+net_investment_income_tax:
+    imports:
+        - 26/1411/c#net_investment_income
+        - 26/1411/b#threshold_amount
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    unit: "USD"
+    label: "Net Investment Income Tax"
+    description: "3.8% tax on lesser of NII or excess MAGI per 26 USC 1411(a)"
+    from 2013-01-01:
+        excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
+        return niit_rate * min(net_investment_income, excess_magi)
+```
+
+Tests go in a separate `.rac.test` file alongside the `.rac` file:
+
+```yaml
+# 26 USC Section 1411(a) tests
+
+net_investment_income_tax:
     - name: "MAGI below threshold"
       period: 2024-01
       inputs:
@@ -168,9 +174,10 @@ All files go in `~/RulesFoundation/rac-us/statute/{title}/{section}/`
 
 ## Attribute Whitelist
 
-**Parameters:** `description`, `unit`, `indexed_by`, `values`
-**Variables:** `imports`, `entity`, `period`, `dtype`, `unit`, `label`, `description`, `default`, `formula`, `tests`, `versions`
+**Parameters (no keyword prefix):** `description`, `unit`, `indexed_by`, `from YYYY-MM-DD:` temporal entries
+**Variables (no keyword prefix):** `imports`, `entity`, `period`, `dtype`, `unit`, `label`, `description`, `default`, `from YYYY-MM-DD:` temporal formula blocks
 **Inputs:** `entity`, `period`, `dtype`, `unit`, `label`, `description`, `default`
+**Tests:** defined in separate `.rac.test` files (not inline)
 
 ## Compiler-Driven Validation
 
@@ -194,21 +201,33 @@ The engine compilation check parses the v2 .rac file, converts it to the engine'
 
 **Do NOT proceed to the next file until current file passes both checks.**
 
-## Temporal versioning for parameters
+## Temporal versioning
 
-When a parameter has different values for different tax years, use the `values:` date map:
+Parameters and formulas support temporal entries with `from YYYY-MM-DD:` syntax:
 
 ```yaml
-parameter standard_deduction_single:
-  description: "Standard deduction for single filers"
-  unit: USD
-  values:
-    2023-01-01: 13850
-    2024-01-01: 14600
-    2025-01-01: 15000
+standard_deduction_single:
+    description: "Standard deduction for single filers"
+    unit: USD
+    from 2023-01-01: 13850
+    from 2024-01-01: 14600
+    from 2025-01-01: 15000
 ```
 
-The engine resolves the correct value based on the `as_of` date at compile time.
+Formulas can also have temporal versions:
+
+```yaml
+some_tax:
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2018-01-01:
+        return marginal_agg(taxable_income, brackets_2018)
+    from 2025-01-01:
+        return marginal_agg(taxable_income, brackets_2025)
+```
+
+The engine resolves the correct value/formula based on the `as_of` date at compile time.
 
 ## Amendment files for reforms
 

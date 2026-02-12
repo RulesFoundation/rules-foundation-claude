@@ -1,3 +1,7 @@
+---
+description: Log reasoning and actions during encoding workflows for audit trails
+---
+
 # Encoding Log Skill
 
 Use this skill to log your reasoning and actions during encoding workflows.
