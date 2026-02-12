@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "rules-foundation",
+  "owner": {
+    "name": "Rules Foundation"
+  },
+  "plugins": [
+    {
+      "name": "rules-foundation",
+      "source": "./",
+      "description": "RAC encoding, atlas legal archive, and development tools",
+      "version": "0.4.0"
+    }
+  ]
+}
