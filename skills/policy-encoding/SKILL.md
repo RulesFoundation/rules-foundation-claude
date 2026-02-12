@@ -89,34 +89,39 @@ Each file encodes EXACTLY one statutory subsection:
 # statute/26/1411/a.rac
 # 26 USC § 1411(a) - General Rule
 
-text: """
+"""
 (a) General rule.— Except as provided in this section, there is hereby imposed...
 a tax equal to 3.8 percent of the lesser of—
 (1) net investment income, or
 (2) modified adjusted gross income in excess of the threshold amount.
 """
 
-parameter niit_rate:
-  description: "Tax rate on net investment income"
-  unit: rate
-  values:
-    2013-01-01: 0.038
+niit_rate:
+    description: "Tax rate on net investment income"
+    unit: rate
+    from 2013-01-01: 0.038
 
-variable net_investment_income_tax:
-  imports:
-    - 26/1411/c#net_investment_income
-    - 26/1411/b#threshold_amount
-  entity: TaxUnit
-  period: Year
-  dtype: Money
-  unit: "USD"
-  label: "Net Investment Income Tax"
-  description: "3.8% tax on lesser of NII or excess MAGI per 26 USC 1411(a)"
-  syntax: python
-  formula: |
-    excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
-    return niit_rate * min(net_investment_income, excess_magi)
-  tests:
+net_investment_income_tax:
+    imports:
+        - 26/1411/c#net_investment_income
+        - 26/1411/b#threshold_amount
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    unit: "USD"
+    label: "Net Investment Income Tax"
+    description: "3.8% tax on lesser of NII or excess MAGI per 26 USC 1411(a)"
+    from 2013-01-01:
+        excess_magi = max(0, modified_adjusted_gross_income - threshold_amount)
+        return niit_rate * min(net_investment_income, excess_magi)
+```
+
+Tests go in a separate `.rac.test` file:
+
+```yaml
+# statute/26/1411/a.rac.test
+
+net_investment_income_tax:
     - name: "MAGI below threshold"
       period: 2024-01
       inputs:
@@ -264,7 +269,7 @@ Before marking any encoding complete, you MUST verify ALL of the following:
 ```
 
 - [ ] File path number matches statute paragraph number
-- [ ] `text:` field quotes the EXACT subsection indicated by filepath
+- [ ] `"""..."""` docstring quotes the EXACT subsection indicated by filepath
 - [ ] No content from adjacent subsections leaked in
 
 ### 2. Parent File Integration
@@ -272,9 +277,14 @@ When creating subdirectory files (e.g., `h/1.rac`), you MUST update the parent f
 
 ```yaml
 # In statute/26/1.rac - MUST add import:
-variable income_tax_before_credits:
-  imports:
-    - 26/1/h/1#capital_gains_tax_under_1h1  # ← ADD THIS
+income_tax_before_credits:
+    imports:
+        - 26/1/h/1#capital_gains_tax_under_1h1  # ADD THIS
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2024-01-01:
+        ...
 ```
 
 - [ ] Parent .rac file imports key variables from new subdirectory
@@ -302,20 +312,29 @@ input net_capital_gain:
 ### 4. Circular Reference Check
 Variables cannot reference themselves or create cycles:
 
-```python
-# ❌ WRONG - circular reference
-variable tax:
-  formula: |
-    return tax * rate  # References itself!
+```yaml
+# WRONG - circular reference
+tax:
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2024-01-01:
+        return tax * rate  # References itself!
 
-# ✓ RIGHT - separate variables
-variable base_amount:
-  formula: |
-    return income - deductions
+# RIGHT - separate variables
+base_amount:
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2024-01-01:
+        return income - deductions
 
-variable tax:
-  formula: |
-    return base_amount * rate
+tax:
+    entity: TaxUnit
+    period: Year
+    dtype: Money
+    from 2024-01-01:
+        return base_amount * rate
 ```
 
 - [ ] No variable references itself in its formula
@@ -324,7 +343,7 @@ variable tax:
 ### 5. Tests Required
 Every variable MUST have at least one test:
 
-- [ ] Every variable has `tests:` block
+- [ ] Every variable has tests in a companion `.rac.test` file
 - [ ] Tests cover basic case, edge cases, zero case
 
 ## Troubleshooting

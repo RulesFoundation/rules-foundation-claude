@@ -56,7 +56,7 @@ statute/26/32/c/2/A.rac  =  26 USC 32(c)(2)(A)
 - [ ] Parent file imports subdirectory files
 
 ### 4. Test Coverage (Weight: 20%)
-- [ ] Has inline `tests:` block
+- [ ] Has companion `.rac.test` file with test cases
 - [ ] Tests cover normal, edge, and boundary cases
 - [ ] Expected values verified against authoritative source
 
@@ -66,7 +66,7 @@ statute/26/32/c/2/A.rac  =  26 USC 32(c)(2)(A)
 - [ ] No redundant aliases
 
 ### 6. Stub Format (If status: stub) - BLOCKING
-- [ ] Has `status: stub` and `text:` block
+- [ ] Has `status: stub` and `"""..."""` docstring block
 - [ ] Variables have `stub_for:`, entity, period, dtype, default
 - [ ] NO parameters, formulas, or tests
 
@@ -75,10 +75,10 @@ statute/26/32/c/2/A.rac  =  26 USC 32(c)(2)(A)
 Before completing any review, scan formulas for disallowed literals:
 
 ```bash
-grep -E 'formula:|^\s+[^#]*\b([4-9]|[1-9][0-9]+)\b' file.rac
+grep -E 'from [0-9]{4}-[0-9]{2}-[0-9]{2}:|^\s+[^#]*\b([4-9]|[1-9][0-9]+)\b' file.rac
 ```
 
-Allowed: -1, 0, 1, 2, 3. Everything else must be a parameter.
+Allowed: -1, 0, 1, 2, 3. Everything else must be a parameter. Dates in `from YYYY-MM-DD:` lines are excluded from this check.
 
 ## Engine Compilation Check
 
@@ -93,7 +93,7 @@ If compilation fails, flag it as a CRITICAL issue — the encoding has structura
 
 ## Temporal Value Coverage Check
 
-For parameters with `values:` date maps, verify:
+For parameters with `from YYYY-MM-DD:` temporal entries, verify:
 - The earliest date covers the intended effective date range
 - No gaps between date entries where the parameter would be undefined
 - Historical values match authoritative sources (IRS Revenue Procedures, etc.)
