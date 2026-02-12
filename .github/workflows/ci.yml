@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-plugin:
+    name: Validate plugin structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required plugin files exist
+        run: |
+          errors=0
+
+          # Plugin manifest
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing required file: $f"
+              errors=$((errors + 1))
+            else
+              echo "OK: $f"
+            fi
+          done
+
+          # Hook scripts referenced in plugin.json
+          for f in hooks/session-start.sh hooks/log-subagent-transcript.py hooks/log-encoding-events.py hooks/session-end.sh; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing hook script referenced in plugin.json: $f"
+              errors=$((errors + 1))
+            else
+              echo "OK: $f"
+            fi
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "::error::$errors required file(s) missing"
+            exit 1
+          fi
+          echo "All required files present."
+
+      - name: Validate plugin.json is valid JSON
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error::Invalid JSON in $f"
+              exit 1
+            fi
+            echo "OK: $f is valid JSON"
+          done
+
+      - name: Validate markdown frontmatter
+        run: |
+          errors=0
+
+          # Agents must have name and description
+          for f in agents/*.md; do
+            [ ! -f "$f" ] && continue
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::Missing YAML frontmatter (no opening ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+            # Extract frontmatter (between first and second ---)
+            frontmatter=$(sed -n '2,/^---$/p' "$f" | sed '$d')
+            if ! echo "$frontmatter" | grep -q '^name:'; then
+              echo "::error file=$f::Agent missing 'name' in frontmatter"
+              errors=$((errors + 1))
+            fi
+            if ! echo "$frontmatter" | grep -q '^description:'; then
+              echo "::error file=$f::Agent missing 'description' in frontmatter"
+              errors=$((errors + 1))
+            fi
+            echo "OK: $f"
+          done
+
+          # Commands must have description
+          for f in commands/*.md; do
+            [ ! -f "$f" ] && continue
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::Missing YAML frontmatter (no opening ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+            frontmatter=$(sed -n '2,/^---$/p' "$f" | sed '$d')
+            if ! echo "$frontmatter" | grep -q '^description:'; then
+              echo "::error file=$f::Command missing 'description' in frontmatter"
+              errors=$((errors + 1))
+            fi
+            echo "OK: $f"
+          done
+
+          # Skills must have description
+          for f in skills/*.md skills/*/SKILL.md; do
+            [ ! -f "$f" ] && continue
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::Missing YAML frontmatter (no opening ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+            frontmatter=$(sed -n '2,/^---$/p' "$f" | sed '$d')
+            if ! echo "$frontmatter" | grep -q '^description:'; then
+              echo "::error file=$f::Skill missing 'description' in frontmatter"
+              errors=$((errors + 1))
+            fi
+            echo "OK: $f"
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "::error::$errors frontmatter issue(s) found"
+            exit 1
+          fi
+          echo "All markdown frontmatter valid."
+
+      - name: Check hook scripts referenced in plugin.json are executable
+        run: |
+          errors=0
+          # Extract script paths from plugin.json command fields
+          scripts=$(python3 -c "
+          import json
+          with open('.claude-plugin/plugin.json') as f:
+              data = json.load(f)
+          seen = set()
+          for hook_list in data.get('hooks', {}).values():
+              for entry in hook_list:
+                  for hook in entry.get('hooks', []):
+                      cmd = hook.get('command', '')
+                      cmd = cmd.replace('\${CLAUDE_PLUGIN_ROOT}', '.')
+                      if cmd not in seen:
+                          seen.add(cmd)
+                          print(cmd)
+          ")
+
+          for f in $scripts; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Hook script not found: $f"
+              errors=$((errors + 1))
+            elif [ ! -x "$f" ]; then
+              echo "::error file=$f::Hook script is not executable"
+              errors=$((errors + 1))
+            else
+              echo "OK: $f is executable"
+            fi
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "::error::$errors hook script issue(s)"
+            exit 1
+          fi
+          echo "All referenced hook scripts are executable."
