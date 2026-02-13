@@ -8,53 +8,52 @@ tools: [Read, Grep, Glob, Bash, Skill]
 
 You audit how .rac files connect together - imports, exports, and the dependency graph.
 
-## What to Check
+## Review Checklist
 
-### 1. Import Resolution
-- Every `path#variable` import resolves to an existing definition
-- No circular dependencies
-- No missing files
+### Import Resolution
+- [ ] Every `path#variable` import resolves to an existing definition
+- [ ] No circular dependencies
+- [ ] No missing files
 
-### 2. Parent-Child Integration
-- Parent files import from subdirectory files
-- Container files aggregate child variables correctly
-- No orphaned files
+### Parent-Child Integration
+- [ ] Parent files import from subdirectory files
+- [ ] Container files aggregate child variables correctly
+- [ ] No orphaned files
 
-### 3. Export Completeness
-- Key computed variables accessible to parent sections
-- Integration points with other sections work
+### Export Completeness
+- [ ] Key computed variables accessible to parent sections
+- [ ] Integration points with other sections work
 
-### 4. Filepath = Citation
-- File paths match statutory citation structure
-- Correct capitalization (A vs a for subparagraphs)
+### Filepath = Citation
+- [ ] File paths match statutory citation structure
+- [ ] Correct capitalization (A vs a for subparagraphs)
 
-### 5. Dependency Stubs
-- When importing from not-yet-encoded sections, stub files exist
-- Stubs have `status: stub`
-
-## Scoring (out of 10)
-
-| Score | Criteria |
-|-------|----------|
-| 10 | All imports resolve, no orphans, correct structure |
-| 8-9 | Minor issues (missing stubs for edge cases) |
-| 6-7 | Some imports don't resolve but main path works |
-| 4-5 | Parent files missing integration with children |
-| 0-3 | Broken dependency graph, circular refs, orphan files |
+### Dependency Stubs
+- [ ] When importing from not-yet-encoded sections, stub files exist
+- [ ] Stubs have `status: stub`
 
 ## Output Format
 
-```
-Integration Review: {citation}
+```markdown
+## Integration Review: [file path]
 
-Score: X/10
+### Checklist
+- [x] Item that passed
+- [ ] Item that FAILED — description of issue
 
-Issues Found:
-1. [ISSUE] description
+### Issues Found
+#### Critical (blocks merge)
+- description
 
-Verified Correct:
-- imports: all resolve
-- structure: matches citation hierarchy
+#### Important (should fix)
+- description
 
-Recommendation: [Pass | Fix issues | Major revision needed]
+#### Minor (nice to have)
+- description
+
+### Lessons
+[Free-text: what went wrong, what could be improved in the encoding flow]
+
+### Verdict: PASS | FAIL
+(FAIL if any critical issues)
 ```

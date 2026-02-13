@@ -16,19 +16,7 @@ You are a conductor, not a performer. You dispatch agents for each phase and col
 
 When given a citation like "26 USC 1":
 
-### Phase 1: Analysis (get predictions)
-
-```
-Task(
-  subagent_type="rules-foundation:Statute Analyzer",
-  prompt="Analyze {citation}. Report: subsection tree, encoding order, dependencies, predictions (iterations/errors/time/scores)",
-  model="haiku"
-)
-```
-
-Record the predictions from this agent.
-
-### Phase 2: Encoding
+### Phase 1: Encoding
 
 ```
 Task(
@@ -40,7 +28,7 @@ Task(
 
 Record: iterations needed, errors encountered, files created.
 
-### Phase 3: Oracle Validation (fast, provides context)
+### Phase 2: Oracle Validation (fast, provides context)
 
 Run oracles BEFORE LLM reviewers - they're fast/free and provide diagnostic context:
 
@@ -57,7 +45,7 @@ Record the oracle context:
 - TAXSIM match rate and discrepancies
 - Specific test cases where outputs differ
 
-### Phase 4: LLM Review (parallel, uses oracle context)
+### Phase 3: LLM Review (parallel, uses oracle context)
 
 Spawn ALL four reviewers in a SINGLE message, passing oracle context so they can diagnose WHY discrepancies exist:
 
@@ -68,9 +56,9 @@ Task(subagent_type="rules-foundation:Parameter Reviewer", prompt="Review {citati
 Task(subagent_type="rules-foundation:Integration Reviewer", prompt="Review {citation} imports/integration. Oracle found: {oracle_discrepancies}", model="haiku")
 ```
 
-Collect scores from each reviewer. They should investigate the oracle discrepancies and diagnose root causes.
+Collect verdicts from each reviewer. They should investigate the oracle discrepancies and diagnose root causes.
 
-### Phase 5: Log & Report
+### Phase 4: Log & Report
 
 Run these commands yourself (you have Bash access):
 
@@ -81,24 +69,33 @@ autorac log \
   --file=~/RulesFoundation/rac-us/statute/{path}.rac \
   --iterations={N} \
   --errors='[{errors}]' \
-  --scores='{"rac":{X},"formula":{X},"param":{X},"integration":{X}}' \
-  --predicted='{"iterations":{P},"rac":{P},"formula":{P},"param":{P},"integration":{P}}'
+  --verdicts='{"rac":"{PASS|FAIL}","formula":"{PASS|FAIL}","param":"{PASS|FAIL}","integration":"{PASS|FAIL}"}' \
+  --critical-issues='[{issues}]' \
+  --oracle-match='{"pe":{X},"taxsim":{Y}}' \
+  --lessons='{lessons_text}'
 ```
 
-Then output the calibration report:
+Then output the summary:
 
 ```
 Results for {citation}:
-                    Predicted    Actual
-Iterations:         {P}          {A}
-Errors:             [...]        [...]
-RAC Format:         {P}/10       {A}/10
-Formula:            {P}/10       {A}/10
-Parameters:         {P}/10       {A}/10
-Integration:        {P}/10       {A}/10
 
-Calibration: [good | overconfident | underconfident]
+Encoding: {N} files created, {E} errors fixed
+Oracles: PE {X}% match, TAXSIM {Y}% match
+
+Reviews:
+  RAC Format:    PASS/FAIL  (N critical, M important)
+  Formula:       PASS/FAIL  (N critical, M important)
+  Parameters:    PASS/FAIL  (N critical, M important)
+  Integration:   PASS/FAIL  (N critical, M important)
+
+Overall: PASS/FAIL
+
+Lessons:
+- [aggregated from reviewers]
 ```
+
+Overall is FAIL if ANY reviewer returns FAIL.
 
 ## Critical Rules
 

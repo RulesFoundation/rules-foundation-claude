@@ -32,40 +32,40 @@ statute/26/32/c/2/A.rac  =  26 USC 32(c)(2)(A)
 
 ## Review Checklist
 
-### 0. Filepath-Content Match (Weight: 35%) - BLOCKING
+### Filepath-Content Match — BLOCKING
 - [ ] Content encodes ONLY what the filepath citation says
 - [ ] No content from other subsections mixed in
 - [ ] File granularity - each subsection gets its own file
 
-### 1. Statutory Fidelity (Weight: 20%)
+### Statutory Fidelity
 - [ ] Formula logic matches rule text exactly
 - [ ] No simplifications beyond what rule says
 - [ ] Cross-references resolved correctly
 - [ ] Uses built-in functions (`marginal_agg()`) where appropriate
 
-### 2. Parameterization (Weight: 15%)
+### Parameterization
 - [ ] NO hardcoded literals except -1, 0, 1, 2, 3
 - [ ] All thresholds, rates, amounts from parameters
 - [ ] Tax brackets use array-based `brackets:` parameter
 - [ ] Variable names don't embed parameter values
 
-### 3. Schema Correctness (Weight: 15%)
+### Schema Correctness
 - [ ] Entity, Period, Dtype are valid
 - [ ] Imports resolve - every `path#variable` has corresponding definition
 - [ ] No circular references
 - [ ] Parent file imports subdirectory files
 
-### 4. Test Coverage (Weight: 20%)
+### Test Coverage
 - [ ] Has companion `.rac.test` file with test cases
 - [ ] Tests cover normal, edge, and boundary cases
 - [ ] Expected values verified against authoritative source
 
-### 5. Code Quality (Weight: 10%)
+### Code Quality
 - [ ] Readable, well-commented
 - [ ] snake_case variable names
 - [ ] No redundant aliases
 
-### 6. Stub Format (If status: stub) - BLOCKING
+### Stub Format (If status: stub) — BLOCKING
 - [ ] Has `status: stub` and `"""..."""` docstring block
 - [ ] Variables have `stub_for:`, entity, period, dtype, default
 - [ ] NO parameters, formulas, or tests
@@ -82,7 +82,7 @@ Allowed: -1, 0, 1, 2, 3. Everything else must be a parameter. Dates in `from YYY
 
 ## Engine Compilation Check
 
-**Before scoring, verify the encoding compiles to engine IR:**
+**Before finishing, verify the encoding compiles to engine IR:**
 
 ```bash
 cd ~/RulesFoundation/autorac
@@ -98,36 +98,28 @@ For parameters with `from YYYY-MM-DD:` temporal entries, verify:
 - No gaps between date entries where the parameter would be undefined
 - Historical values match authoritative sources (IRS Revenue Procedures, etc.)
 
-## Scoring
-
-| Score | Meaning |
-|-------|---------|
-| 9-10 | Production ready |
-| 7-8 | Good, minor improvements |
-| 5-6 | Acceptable, needs fixes |
-| 3-4 | Significant issues |
-| 1-2 | Major problems, needs rewrite |
-
 ## Output Format
 
 ```markdown
-## RAC Review: [file path]
+## RAC Format Review: [file path]
 
-### Scores
-| Criterion | Score | Notes |
-|-----------|-------|-------|
-| Filepath-Content Match | X/10 | BLOCKING if fails |
-| Statutory Fidelity | X/10 | ... |
-| Parameterization | X/10 | ... |
-| Schema Correctness | X/10 | ... |
-| Test Coverage | X/10 | ... |
-| Code Quality | X/10 | ... |
-| **Overall** | **X/10** | Weighted average |
+### Checklist
+- [x] Item that passed
+- [ ] Item that FAILED — description of issue
 
 ### Issues Found
-#### Critical
-#### Important
-#### Minor
+#### Critical (blocks merge)
+- description
 
-### Recommendations
+#### Important (should fix)
+- description
+
+#### Minor (nice to have)
+- description
+
+### Lessons
+[Free-text: what went wrong, what could be improved in the encoding flow]
+
+### Verdict: PASS | FAIL
+(FAIL if any critical issues)
 ```

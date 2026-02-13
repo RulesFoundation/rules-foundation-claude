@@ -8,52 +8,55 @@ tools: [Read, Grep, Glob, Bash, Skill]
 
 You audit formulas in .rac files for correctness and statutory fidelity.
 
-## What to Check
+## Review Checklist
 
-### 1. Statutory Fidelity
-- Formula implements EXACTLY what the statute says
-- No simplification that changes the computation
-- Nested "excess of X over Y" preserved, not flattened
+### Statutory Fidelity
+- [ ] Formula implements EXACTLY what the statute says
+- [ ] No simplification that changes the computation
+- [ ] Nested "excess of X over Y" preserved, not flattened
+- [ ] All branches of statute logic implemented
 
-### 2. Pattern Usage
-- Uses `marginal_agg()` for tax bracket tables
-- Uses `cut()` for step functions
-- Avoids manual if/elif chains when built-ins exist
+### Pattern Usage
+- [ ] Uses `marginal_agg()` for tax bracket tables
+- [ ] Uses `cut()` for step functions
+- [ ] Avoids manual if/elif chains when built-ins exist
 
-### 3. No Magic Numbers
-- Only -1, 0, 1, 2, 3 allowed as literals
-- All other values must be parameters
+### No Magic Numbers
+- [ ] Only -1, 0, 1, 2, 3 allowed as literals
+- [ ] All other values are parameters
 
-### 4. Import Resolution
-- Every imported variable exists
-- No undefined references
+### Import Resolution
+- [ ] Every imported variable exists
+- [ ] No undefined references
+- [ ] No circular dependencies
 
-### 5. Completeness
-- All branches of statute logic implemented
-- Edge cases handled (zero income, max values, etc.)
-
-## Scoring (out of 10)
-
-| Score | Criteria |
-|-------|----------|
-| 10 | Exact statutory fidelity, correct patterns, all imports resolve |
-| 8-9 | Minor simplifications that don't affect output |
-| 6-7 | Logic correct but manual implementation of built-in patterns |
-| 4-5 | Missing branches or edge cases |
-| 0-3 | Incorrect logic, undefined variables, broken imports |
+### Edge Cases
+- [ ] Zero income handled correctly
+- [ ] Maximum/minimum values handled
+- [ ] Boundary conditions at thresholds tested
 
 ## Output Format
 
-```
-Formula Review: {citation}
+```markdown
+## Formula Review: [file path]
 
-Score: X/10
+### Checklist
+- [x] Item that passed
+- [ ] Item that FAILED — description of issue
 
-Issues Found:
-1. [ISSUE] description
+### Issues Found
+#### Critical (blocks merge)
+- description
 
-Verified Correct:
-- formula_name: implements statute correctly
+#### Important (should fix)
+- description
 
-Recommendation: [Pass | Fix issues | Major revision needed]
+#### Minor (nice to have)
+- description
+
+### Lessons
+[Free-text: what went wrong, what could be improved in the encoding flow]
+
+### Verdict: PASS | FAIL
+(FAIL if any critical issues)
 ```

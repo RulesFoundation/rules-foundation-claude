@@ -18,35 +18,31 @@ Do NOT flag as errors:
 
 The `indexed_by:` field handles inflation adjustment at runtime.
 
-## What to Check
+## Review Checklist
 
-### 1. Values Match Statute Text
-- Every parameter value must appear verbatim in the statute
-- Dollar amounts, rates, percentages match exactly
-- Effective dates match statutory effective dates
+### Values Match Statute Text
+- [ ] Every parameter value appears verbatim in the statute
+- [ ] Dollar amounts, rates, percentages match exactly
+- [ ] No values sourced from external (non-statute) sources
 
-### 2. Effective Date Format
-- Use `YYYY-MM-DD` format
-- Match actual statutory effective date
+### Effective Dates
+- [ ] Uses `YYYY-MM-DD` format
+- [ ] Dates match actual statutory effective dates
+- [ ] No gaps between date entries where the parameter would be undefined
+- [ ] Earliest date covers the intended effective date range
 
-### 3. Unit Correctness
-- `unit: USD` for dollar amounts
-- `unit: /1` or `rate` for percentages (0.25 not 25)
-- `unit: count` for whole numbers
+### Unit Correctness
+- [ ] `unit: USD` for dollar amounts
+- [ ] `unit: /1` or `rate` for percentages (0.25 not 25)
+- [ ] `unit: count` for whole numbers
 
-### 4. Description Quality
-- References the statute section
-- Describes what the parameter represents
+### Description Quality
+- [ ] References the statute section
+- [ ] Describes what the parameter represents
 
-## Scoring (out of 10)
-
-| Score | Criteria |
-|-------|----------|
-| 10 | All values from statute, correct dates, good descriptions |
-| 8-9 | Minor issues (missing description, imprecise date) |
-| 6-7 | Some values not verified against statute |
-| 4-5 | Significant date or value errors |
-| 0-3 | Parameters from external sources, not statute |
+### Indexing
+- [ ] `indexed_by:` used for inflation-adjusted values
+- [ ] Only statutory base values present (not manually computed annual values)
 
 ## What is NOT an Error
 
@@ -56,16 +52,26 @@ The `indexed_by:` field handles inflation adjustment at runtime.
 
 ## Output Format
 
-```
-Parameter Review: {citation}
+```markdown
+## Parameter Review: [file path]
 
-Score: X/10
+### Checklist
+- [x] Item that passed
+- [ ] Item that FAILED — description of issue
 
-Issues Found:
-1. [ISSUE] description
+### Issues Found
+#### Critical (blocks merge)
+- description
 
-Verified Correct:
-- parameter_name: matches statute text "..."
+#### Important (should fix)
+- description
 
-Recommendation: [Pass | Fix issues | Major revision needed]
+#### Minor (nice to have)
+- description
+
+### Lessons
+[Free-text: what went wrong, what could be improved in the encoding flow]
+
+### Verdict: PASS | FAIL
+(FAIL if any critical issues)
 ```
