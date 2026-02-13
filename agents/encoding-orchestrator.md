@@ -48,7 +48,7 @@ Run oracles BEFORE LLM reviewers - they're fast/free and provide diagnostic cont
 Task(
   subagent_type="rules-foundation:Encoding Validator",
   prompt="Validate {citation} against PolicyEngine and TAXSIM. Report: match rates, specific discrepancies, test cases that differ.",
-  model="sonnet"
+  model="haiku"
 )
 ```
 
