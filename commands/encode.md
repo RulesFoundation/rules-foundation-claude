@@ -5,7 +5,7 @@ argument-hint: "<citation> (e.g., '26 USC 1', '26 USC 32(c)(2)(A)')"
 
 # Encode Statute
 
-Dispatches the Encoding Orchestrator agent to run the full multi-agent workflow.
+Runs the autorac encoding pipeline (self-contained, no plugin agents).
 
 ## Usage
 
@@ -17,21 +17,15 @@ Dispatches the Encoding Orchestrator agent to run the full multi-agent workflow.
 
 ## What Happens
 
-The Encoding Orchestrator agent is spawned and runs:
+The autorac CLI runs the full pipeline:
 
-1. **Analysis** - Statute Analyzer agent (predictions)
-2. **Encoding** - RAC Encoder agent (writes files, fixes errors)
-3. **Oracles** - Encoding Validator agent (PE/TAXSIM comparison)
-4. **Review** - 4 Reviewer agents in parallel (RAC, Formula, Param, Integration)
-5. **Logging** - Records to autorac experiment DB
-6. **Report** - Calibration comparison (predicted vs actual)
+1. **Encoding** - Claude encodes subsections into .rac files
+2. **Oracles** - Validates against PolicyEngine and TAXSIM
+3. **Review** - 4 LLM reviewers run checklists in parallel
+4. **Logging** - Records to autorac experiment DB
 
 ## Invoke
 
-```
-Task(
-  subagent_type="rules-foundation:Encoding Orchestrator",
-  prompt="Encode $ARGUMENTS",
-  model="opus"
-)
+```bash
+cd ~/RulesFoundation/autorac && source .venv/bin/activate && autorac encode "$ARGUMENTS"
 ```
